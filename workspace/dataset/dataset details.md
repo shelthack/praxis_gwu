@@ -64,12 +64,13 @@ To retrieve the files directly from S3:
    aws configure
 3. Use the following commands to download the CSV files:
 
+```
 aws s3 cp s3://your-bucket-name/path/to/training_subset1.csv ./
 aws s3 cp s3://your-bucket-name/path/to/training_subset2.csv ./
 aws s3 cp s3://your-bucket-name/path/to/validation.csv ./
 aws s3 cp s3://your-bucket-name/path/to/testing.csv ./
 aws s3 cp s3://your-bucket-name/path/to/testing_no_label.csv ./
-
+```
 Replace 'your-bucket-name' and 'path/to/' with the actual S3 bucket name and path.
 
 Note: Ensure that your IAM user has the necessary permissions to read from the S3 bucket.
