@@ -25,3 +25,20 @@ Everything you need to reproduce results or extend the work is here.
 ---
 
 ## Repository structure
+
+
+Large binary artefacts are tracked with **Git LFS** to keep clone size reasonable.
+
+---
+
+## Quick‑start
+
+```bash
+# 1. Clone (with LFS) and create conda env
+git clone --recurse-submodules https://github.com/<user>/praxis_gwu.git
+cd praxis_gwu
+conda env create -f environment.yml
+conda activate praxis-gwu
+
+# 2. Launch JupyterLab
+jupyter lab
