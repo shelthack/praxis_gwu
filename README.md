@@ -14,10 +14,9 @@ This repository hosts the full research artefacts behind my doctoral praxis.
 It includes:
 
 - **Jupyter Notebooks** used to clean data, engineer features, and train/evaluate models across AutoML platforms (AutoGluon, AWS Autopilot, Azure AutoML).  
-- **Source Code (`src/`)** for custom preprocessing, metric utilities, deployment scripts, and evaluation helpers.  
 - **Datasets / Partitions (`data/`)** — sanitized splits of the corrected CSE‑CIC‑IDS2018 dataset plus metadata describing resampling procedures.  
 - **Trained Models (`models/`)** — serialized model artefacts and configuration files.  
-- **Experiment Logs (`artifacts/`)** containing output summaries, confusion matrices, and detailed metrics used in Chapters 3–4.  
+- **Experiment Logs (`Research Metrics/`)** containing output summaries, confusion matrices, and detailed metrics used in Chapters 3–4.  
 - **Appendix Material (`docs/appendix/`)** – PDF/Markdown exports cross‑referenced in the dissertation’s Appendix.  
 
 Everything you need to reproduce results or extend the work is here.
