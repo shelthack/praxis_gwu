@@ -3,7 +3,7 @@ Private repo for my GWU doctoral praxis “Leveraging AutoML for Advanced Networ
 
 # praxis_gwu
 
-*Leveraging AutoML for Advanced Network‑Traffic Analysis and Intrusion Detection*  
+*Leveraging AutoML for Advanced Network Traffic Analysis and Intrusion Detection by Enhancing Security with a Multi-Feature IDS Dataset![image](https://github.com/user-attachments/assets/13f4a561-65d5-4a47-a7f6-a1c90aa15877)*  
 Doctoral Praxis – George Washington University, School of Engineering & Applied Science  
 Author: **Chibuike Abana** (D.Eng. Candidate, Cybersecurity Analytics)  
 
