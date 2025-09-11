@@ -1,5 +1,5 @@
 # praxis_gwu
-Private repo for my GWU doctoral praxis “Leveraging AutoML for Advanced Network‑Traffic Analysis &amp; Intrusion Detection.” Holds notebooks, code, models, and appendix artifacts. Will become public after my 2025 defense to foster open, reproducible cybersecurity + AutoML research.
+Repository for my GWU doctoral praxis “Leveraging AutoML for Advanced Network Traffic Analysis and Intrusion Detection by Enhancing Security with a Multi-Feature IDS Dataset” Holds notebooks, code, models, and appendix artifacts. It is made public to foster open, reproducible cybersecurity + AutoML research.
 
 # praxis_gwu
 
@@ -13,11 +13,9 @@ Author: **Chibuike Abana** (D.Eng. Candidate, Cybersecurity Analytics)
 This repository hosts the full research artefacts behind my doctoral praxis.  
 It includes:
 
-- **Jupyter Notebooks** used to clean data, engineer features, and train/evaluate models across AutoML platforms (AutoGluon, AWS Autopilot, Azure AutoML).  
-- **Datasets / Partitions (`data/`)** — sanitized splits of the corrected CSE‑CIC‑IDS2018 dataset plus metadata describing resampling procedures.  
-- **Trained Models (`models/`)** — serialized model artefacts and configuration files.  
-- **Experiment Logs (`Research Metrics/`)** containing output summaries, confusion matrices, and detailed metrics used in Chapters 3–4.  
-- **Appendix Material (`docs/appendix/`)** – PDF/Markdown exports cross‑referenced in the dissertation’s Appendix.  
+- **Jupyter Notebooks (`workspace/Notebooks/`)** - used to clean data, engineer features, and train/evaluate models across AutoML platforms (AutoGluon, AWS Autopilot, Azure AutoML).  
+- **Datasets / Partitions (`workspace/dataset/`)** — sanitized splits of the corrected CSE‑CIC‑IDS2018 dataset plus metadata describing resampling procedures.  
+- **Experiment Logs (`workspace/Research Metrics/`)** containing output summaries, confusion matrices, and detailed metrics used in Chapters 3–4.  
 
 Everything you need to reproduce results or extend the work is here.
 
@@ -65,6 +63,7 @@ Abana, C. S. (2025). Leveraging AutoML for Advanced Network Traffic Analysis and
 ```
 
 ### BibTeX
+
 @phdthesis{
 author={Abana,Chibuike S.},
 year={2025},
@@ -72,7 +71,7 @@ title={Leveraging AutoML for Advanced Network Traffic Analysis and Intrusion Det
 journal={ProQuest Dissertations and Theses},
 pages={179},
 note={Copyright - Database copyright ProQuest LLC; ProQuest does not claim copyright in the individual underlying works; Last updated - 2025-09-03},
-abstract={This research explores how AutoML enhances network-based intrusion detection by reducing false alarms, eliminating manual tuning, and enhancing model adaptability. AutoML automates key machine learning processes such as preprocessing, algorithm selection, feature engineering, and hyperparameter tuning, thereby improving the efficiency and detection accuracy of IDS.The research employs an enhanced, multi-feature version of the CSE-CIC-IDS2018 dataset. Comprehensive preprocessing was undertaken to eliminate issues like missing values, duplicate records, mislabeling, and irrelevant features. To address severe class imbalance, a multi-phase resampling strategy was employed, combining undersampling, SMOTE, and SMOTEENN, which improved the representation of the minority class.Three AutoML platforms AutoGluon, AWS Autopilot, and Azure AutoML were evaluated using stratified sampling with consistent validation and testing sets. Model performance was measured using metrics such as accuracy, balanced accuracy, precision, recall, F1-score, false positive rate (FPR), and Matthews Correlation Coefficient (MCC).All frameworks achieved exceptional results, with accuracy exceeding 0.99999, balanced accuracy above 0.99980, F1-score, precision, and recall above 0.99999, and MCC above 0.99995, alongside near-zero false positive rates. Statistical validation using the non-parametric Mann-Whitney U test confirmed that the proposed AutoML models achieved a statistically significant improvement in accuracy (p = 0.002), a statistically significant reduction in FPR (p = 0.004), and a statistically significant reduction in model development time (p = 0.014) compared to benchmark studies. ROC and precision-recall curves yielded perfect AUC and AP scores of 1.00.The results show that the proposed AutoML models make intrusion detection better, increase accuracy, shorten development time, and make it easier to scale IDS deployment. These findings highlight AutoML's practical value for organizations looking to rapidly implement adaptable and accurate intrusion detection solutions.},
+abstract={This research explores how AutoML enhances network-based intrusion detection by reducing false alarms, eliminating manual tuning, and enhancing model adaptability. AutoML automates key machine learning processes such as preprocessing, algorithm selection, feature engineering, and hyperparameter tuning, thereby improving the efficiency and detection accuracy of IDS. The research employs an enhanced, multi-feature version of the CSE-CIC-IDS2018 dataset. Comprehensive preprocessing was undertaken to eliminate issues like missing values, duplicate records, mislabeling, and irrelevant features. To address severe class imbalance, a multi-phase resampling strategy was employed, combining undersampling, SMOTE, and SMOTEENN, which improved the representation of the minority class. Three AutoML platforms, AutoGluon, AWS Autopilot, and Azure AutoML, were evaluated using stratified sampling with consistent validation and testing sets. Model performance was measured using metrics such as accuracy, balanced accuracy, precision, recall, F1-score, false positive rate (FPR), and Matthews Correlation Coefficient (MCC). All frameworks achieved exceptional results, with accuracy exceeding 0.99999, balanced accuracy above 0.99980, F1-score, precision, and recall above 0.99999, and MCC above 0.99995, alongside near-zero false positive rates. Statistical validation using the non-parametric Mann-Whitney U test confirmed that the proposed AutoML models achieved a statistically significant improvement in accuracy (p = 0.002), a statistically significant reduction in FPR (p = 0.004), and a statistically significant reduction in model development time (p = 0.014) compared to benchmark studies. ROC and precision-recall curves yielded perfect AUC and AP scores of 1.00. The results show that the proposed AutoML models make intrusion detection better, increase accuracy, shorten development time, and make it easier to scale IDS deployment. These findings highlight AutoML's practical value for organizations looking to rapidly implement adaptable and accurate intrusion detection solutions.},
 keywords={Automated Machine Learning; Class imbalance; Cybersecurity; Intrusion detection system; Network traffic analysis; Computer science; Engineering; Information technology; 0489:Information Technology; 0537:Engineering; 0984:Computer science},
 isbn={9798288883750},
 language={English},
