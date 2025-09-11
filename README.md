@@ -61,19 +61,24 @@ Please cite both the praxis and this repository. Example formats:
 ### APA 7
 
 ```
-Abana, C. S. (2025). Leveraging AutoML for Advanced Network‑Traffic Analysis and Intrusion Detection (Doctoral praxis, George Washington University). https://doi.org/10.XXXXX/zenodo.XXXXXX
+Abana, C. S. (2025). Leveraging AutoML for Advanced Network Traffic Analysis and Intrusion Detection by Enhancing Security With a Multi-Feature IDS Dataset (Order No. 32166548). Available from Dissertations & Theses @ George Washington University - WRLC; ProQuest Dissertations & Theses Global. (3233907683). https://www.proquest.com/dissertations-theses/leveraging-automl-advanced-network-traffic/docview/3233907683/se-2
 ```
 
 ### BibTeX
-
-@phdthesis{YourLastName2025Praxis,
-  author       = {Chibuike S. Abana},
-  title        = {Leveraging AutoML for Advanced Network-Traffic Analysis and Intrusion Detection},
-  school       = {George Washington University},
-  year         = 2025,
-  doi          = {10.XXXXX/zenodo.XXXXXX},
-  note         = {Code and artefacts available at https://github.com/shelthack/praxis_gwu}
+@phdthesis{
+author={Abana,Chibuike S.},
+year={2025},
+title={Leveraging AutoML for Advanced Network Traffic Analysis and Intrusion Detection by Enhancing Security With a Multi-Feature IDS Dataset},
+journal={ProQuest Dissertations and Theses},
+pages={179},
+note={Copyright - Database copyright ProQuest LLC; ProQuest does not claim copyright in the individual underlying works; Last updated - 2025-09-03},
+abstract={This research explores how AutoML enhances network-based intrusion detection by reducing false alarms, eliminating manual tuning, and enhancing model adaptability. AutoML automates key machine learning processes such as preprocessing, algorithm selection, feature engineering, and hyperparameter tuning, thereby improving the efficiency and detection accuracy of IDS.The research employs an enhanced, multi-feature version of the CSE-CIC-IDS2018 dataset. Comprehensive preprocessing was undertaken to eliminate issues like missing values, duplicate records, mislabeling, and irrelevant features. To address severe class imbalance, a multi-phase resampling strategy was employed, combining undersampling, SMOTE, and SMOTEENN, which improved the representation of the minority class.Three AutoML platforms AutoGluon, AWS Autopilot, and Azure AutoML were evaluated using stratified sampling with consistent validation and testing sets. Model performance was measured using metrics such as accuracy, balanced accuracy, precision, recall, F1-score, false positive rate (FPR), and Matthews Correlation Coefficient (MCC).All frameworks achieved exceptional results, with accuracy exceeding 0.99999, balanced accuracy above 0.99980, F1-score, precision, and recall above 0.99999, and MCC above 0.99995, alongside near-zero false positive rates. Statistical validation using the non-parametric Mann-Whitney U test confirmed that the proposed AutoML models achieved a statistically significant improvement in accuracy (p = 0.002), a statistically significant reduction in FPR (p = 0.004), and a statistically significant reduction in model development time (p = 0.014) compared to benchmark studies. ROC and precision-recall curves yielded perfect AUC and AP scores of 1.00.The results show that the proposed AutoML models make intrusion detection better, increase accuracy, shorten development time, and make it easier to scale IDS deployment. These findings highlight AutoML's practical value for organizations looking to rapidly implement adaptable and accurate intrusion detection solutions.},
+keywords={Automated Machine Learning; Class imbalance; Cybersecurity; Intrusion detection system; Network traffic analysis; Computer science; Engineering; Information technology; 0489:Information Technology; 0537:Engineering; 0984:Computer science},
+isbn={9798288883750},
+language={English},
+url={https://www.proquest.com/dissertations-theses/leveraging-automl-advanced-network-traffic/docview/3233907683/se-2},
 }
+
 > A machine‑readable CITATION.cff file is provided so GitHub can auto‑generate proper citation snippets.
 
 ## Contributing
