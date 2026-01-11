@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presentation: Leveraging AutoML for Intrusion Detection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* gray-900 */
+            color: #d1d5db; /* gray-300 */
+            margin: 0;
+            overflow: hidden; /* Prevent scrolling the whole page */
+        }
+        .slide {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow-y: auto; /* Allow scrolling within a slide */
+            padding: 4rem 2rem 6rem 2rem; /* Add padding for content and space for nav */
+            box-sizing: border-box;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .slide.active {
+            display: flex; /* Use flex to center content */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+        }
+        .slide-content {
+            max-width: 1200px;
+            width: 100%;
+        }
+        .navigation {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            border-top: 1px solid #374151; /* gray-700 */
+        }
+        .nav-btn {
+            background-color: #374151; /* gray-700 */
+            color: #d1d5db; /* gray-300 */
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .nav-btn:hover:not(:disabled) {
+            background-color: #4b5563; /* gray-600 */
+            color: #ffffff;
+        }
+        .nav-btn:disabled {
+            background-color: #1f2937; /* gray-800 */
+            color: #4b5563; /* gray-600 */
+            cursor: not-allowed;
+        }
+        #slide-info {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #9ca3af; /* gray-400 */
+            text-align: center;
+        }
+        #slide-menu {
+            display: none;
+            position: fixed;
+            bottom: 5.5rem; /* Position above the navigation bar */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1f2937; /* gray-800 */
+            border: 1px solid #374151;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            width: 90%;
+            max-width: 600px;
+            z-index: 1001;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        #slide-menu ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+        .menu-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: #d1d5db;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+        .menu-link:hover {
+            background-color: #374151;
+        }
+        .menu-link.active {
+            background-color: #60a5fa;
+            color: #111827;
+            font-weight: 600;
+        }
+
+        /* Chart-specific styles */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 40vh; /* Adjust height for slide format */
+            max-height: 450px;
+        }
+        .metric-btn {
+            transition: background-color 0.2s, color 0.2s;
+            background-color: #374151; /* gray-700 */
+            color: #d1d5db; /* gray-300 */
+        }
+        .metric-btn.active {
+            background-color: #60a5fa; /* blue-400 */
+            color: #111827; /* gray-900 */
+        }
+        .sortable-th {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+        .sortable-th:hover {
+            background-color: #374151; /* gray-700 */
+        }
+         .sortable-th .sort-arrow {
+            display: inline-block;
+            margin-left: 8px;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+        .sortable-th.sorted .sort-arrow {
+            opacity: 1;
+        }
+        .sort-arrow.asc { transform: rotate(180deg); }
+        .section-dark {
+            background-color: #111827; /* gray-900 */
+            color: #d1d5db; /* gray-300 */
+        }
+        .section-light {
+             background-color: #f8fafc; /* slate-50 */
+             color: #1e293b; /* slate-800 */
+        }
+        .slide.section-light h3, .slide.section-light h4, .slide.section-light p, .slide.section-light li {
+             color: #1e293b; /* slate-800 */
+        }
+        .slide.section-light .text-slate-700 { color: #334155; }
+        .slide.section-light .text-slate-500 { color: #64748b; }
+        .slide.section-light .text-slate-600 { color: #475569; }
+        .slide.section-light .bg-slate-50 { background-color: #f1f5f9; }
+        .slide.section-light .text-slate-600 { color: #475569; }
+        .slide.section-light .text-slate-900 { color: #0f172a; }
+        .slide.section-light .info-card {
+             background-color: #ffffff;
+             border: 1px solid #e2e8f0;
+             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Slides Container -->
+    <div id="presentation-container">
+        
+        <!-- Slide 1: Hero Section -->
+        <section id="hero" class="slide section-dark" data-title="Title" style="background-image: url('https://storage.googleapis.com/gemini-prod/images/image_4955e3.jpg'); background-size: cover; background-position: center; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+            <div class="bg-black/60 absolute inset-0"></div>
+            <div class="slide-content text-center relative z-10">
+                <div class="mb-12">
+                       <p class="text-2xl font-light tracking-wider text-white">THE GEORGE WASHINGTON UNIVERSITY</p>
+                       <p class="text-sm font-light tracking-widest text-white">WASHINGTON, DC</p>
+                </div>
+                <h2 class="text-4xl md:text-6xl font-bold leading-tight text-white">Leveraging AutoML for Advanced Network Traffic Analysis and Intrusion Detection by Enhancing Security with a Multi-Feature IDS Dataset</h2>
+                <div class="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 text-left max-w-4xl mx-auto text-white">
+                    <div>
+                        <p><strong>Name:</strong> Chibuike S. Abana</p>
+                        <p><strong>DN#:</strong> Praxis Defense</p>
+                        <p><strong>Date:</strong> July 7th, 2025</p>
+                        <p><strong>Time:</strong> 16:00 CST</p>
+                    </div>
+                    <div>
+                        <p class="font-bold">Praxis Committee:</p>
+                        <ul class="list-disc list-inside ml-4">
+                            <li>Dr. John Dargan</li>
+                            <li>Dr. Kenneth Clements</li>
+                            <li>Dr. Michael A. Darko</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Slide 2: Key Findings Section -->
+        <section id="key-findings" class="slide section-light" data-title="Key Findings">
+            <div class="slide-content container mx-auto px-6 text-center">
+                <h3 class="text-3xl md:text-4xl font-bold mb-12">Key Findings At-a-Glance</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                    <div class="bg-white p-8 rounded-lg shadow-md border border-slate-200">
+                        <p class="text-5xl font-extrabold text-blue-600">>99.99%</p>
+                        <p class="mt-4 text-lg font-semibold">Statistically Significant Accuracy</p>
+                        <p class="mt-2 text-slate-500">Achieved near-perfect classification, validated with t-tests (p < 0.05).</p>
+                    </div>
+                    <div class="bg-white p-8 rounded-lg shadow-md border border-slate-200">
+                        <p class="text-5xl font-extrabold text-green-600">>99.9%</p>
+                        <p class="mt-4 text-lg font-semibold">Significant FPR Reduction</p>
+                        <p class="mt-2 text-slate-500">Virtually eliminated false alarms, validated as statistically significant (p < 0.05).</p>
+                    </div>
+                    <div class="bg-white p-8 rounded-lg shadow-md border border-slate-200">
+                        <p class="text-5xl font-extrabold text-slate-600">< 5 Hours</p>
+                        <p class="mt-4 text-lg font-semibold">Model Development Time</p>
+                        <p class="mt-2 text-slate-500">Demonstrated high efficiency compared to manual methods.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 3: Introduction - Background -->
+        <section id="intro-background" class="slide section-dark" data-title="Introduction: The Problem">
+            <div class="slide-content container mx-auto px-6">
+                <div class="text-center mb-10">
+                    <h3 class="text-4xl md:text-5xl font-extrabold text-white">Introduction: The Problem with Traditional IDS</h3>
+                    <p class="text-lg text-gray-400 mt-2 max-w-3xl mx-auto">As cyberattacks become more sophisticated, traditional Intrusion Detection Systems (IDS) and manual machine learning approaches are failing to keep pace.</p>
+                </div>
+                <div class="grid md:grid-cols-2 gap-8 items-center max-w-6xl mx-auto">
+                    <div class="bg-gray-800/50 p-6 rounded-xl border border-gray-700">
+                        <h4 class="text-2xl font-bold text-center text-red-400 mb-4">The Old Way: Manual & Slow</h4>
+                        <div class="space-y-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="bg-red-500/20 p-3 rounded-full"><svg class="w-6 h-6 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M12 6V3m0 18v-3"></path></svg></div>
+                                <div><h5 class="font-bold">Manual Feature Engineering</h5><p class="text-sm text-gray-400">Time-consuming, requires rare expertise, and prone to human bias.</p></div>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <div class="bg-red-500/20 p-3 rounded-full"><svg class="w-6 h-6 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10m4-3s1 .5 2 1.5M15 11v1M13 12a1 1 0 11-2 0 1 1 0 012 0z"></path></svg></div>
+                                <div><h5 class="font-bold">Trial-and-Error Model Selection</h5><p class="text-sm text-gray-400">Inefficient search for the right algorithm for a specific problem.</p></div>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <div class="bg-red-500/20 p-3 rounded-full"><svg class="w-6 h-6 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg></div>
+                                <div><h5 class="font-bold">Laborious Hyperparameter Tuning</h5><p class="text-sm text-gray-400">Manual adjustments often lead to suboptimal model performance.</p></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800/50 p-6 rounded-xl border border-gray-700">
+                        <h4 class="text-2xl font-bold text-center text-amber-400 mb-4">The Consequences</h4>
+                        <div class="space-y-4">
+                             <div class="flex items-center space-x-4">
+                                <div class="bg-amber-500/20 p-3 rounded-full"><svg class="w-6 h-6 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg></div>
+                                <div><h5 class="font-bold">High False Positives</h5><p class="text-sm text-gray-400">Overwhelms security analysts with false alarms, causing alert fatigue.</p></div>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <div class="bg-amber-500/20 p-3 rounded-full"><svg class="w-6 h-6 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                                <div><h5 class="font-bold">Missed Novel Threats</h5><p class="text-sm text-gray-400">Static, signature-based systems are easily bypassed by new attack vectors.</p></div>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <div class="bg-amber-500/20 p-3 rounded-full"><svg class="w-6 h-6 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>
+                                <div><h5 class="font-bold">Inability to Scale</h5><p class="text-sm text-gray-400">Manual processes cannot keep up with the volume and complexity of modern data.</p></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 4: Introduction Section -->
+        <section id="intro" class="slide section-dark" data-title="Introduction: Thesis & Scope">
+            <div class="slide-content container mx-auto px-6">
+                 <div class="text-center mb-12">
+                    <h3 class="text-4xl md:text-5xl font-extrabold text-white">Introduction</h3>
+                </div>
+
+                <!-- Thesis, RQs, Scope -->
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                         <h4 class="text-2xl font-bold mb-4 text-white">Thesis Statement</h4>
+                         <div class="bg-gray-800 p-6 rounded-lg text-center mb-6">
+                            <p class="italic text-gray-300">"This praxis proposes that AutoML can improve the performance of network intrusion systems... resulting in intrusion detectors that have high accuracy with low false positives."</p>
+                        </div>
+                        <h4 class="text-2xl font-bold mb-4 text-white">Research Questions & Hypotheses</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-blue-900/50 p-4 rounded-lg">
+                                <h5 class="font-semibold mb-2 text-blue-300">Questions</h5>
+                                <ul class="space-y-2 text-sm text-blue-200">
+                                    <li><strong>RQ1:</strong> How does AutoML improve accuracy & reduce false positives?</li>
+                                    <li><strong>RQ2:</strong> Impact of diverse features on AutoML?</li>
+                                    <li><strong>RQ3:</strong> Can AutoML streamline IDS development?</li>
+                                </ul>
+                            </div>
+                            <div class="bg-green-900/50 p-4 rounded-lg">
+                                 <h5 class="font-semibold mb-2 text-green-300">Hypotheses</h5>
+                                <ul class="space-y-2 text-sm text-green-200">
+                                    <li><strong>H1:</strong> AutoML will improve model performance.</li>
+                                    <li><strong>H2:</strong> AutoML will reduce false positive rates.</li>
+                                    <li><strong>H3:</strong> AutoML fine-tunes models faster than manual methods.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                     <div>
+                        <h4 class="text-2xl font-bold mb-4 text-white">Scope of Research</h4>
+                        <div class="grid grid-cols-1 gap-4">
+                            <div class="bg-gray-800 p-4 rounded-lg">
+                                 <h6 class="font-bold text-lg text-white mb-2">In Scope</h6>
+                                <ul class="space-y-1 text-sm text-gray-300">
+                                    <li><span class="font-semibold">Dataset:</span> Improved CSE-CIC-IDS2018</li>
+                                    <li><span class="font-semibold">Task:</span> Supervised, Multiclass Classification</li>
+                                    <li><span class="font-semibold">Frameworks:</span> AutoGluon, AWS, Azure</li>
+                                    <li><span class="font-semibold">Metrics:</span> Accuracy, F1, MCC, FPR, Time (<5 Hours)</li>
+                                </ul>
+                            </div>
+                             <div class="bg-red-900/30 p-4 rounded-lg">
+                                 <h6 class="font-bold text-lg text-red-300 mb-2">Out of Scope & Limitations</h6>
+                                <ul class="space-y-1 text-sm text-red-200">
+                                    <li><span class="font-semibold">Excluded Attacks:</span> Infiltration, SQL Injection, "Attempted"</li>
+                                    <li><span class="font-semibold">Learning:</span> No unsupervised/semi-supervised</li>
+                                     <li><span class="font-semibold">Environment:</span> No real-time network analysis</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Slide 5: Literature Review Section -->
+        <section id="lit-review" class="slide section-light" data-title="Literature Review">
+            <div class="slide-content container mx-auto px-6">
+                <div class="text-center mb-8">
+                    <h3 class="text-4xl font-extrabold">Literature Review</h3>
+                    <p class="mt-2 text-lg text-slate-600">Positioning my work within the current state of research.</p>
+                </div>
+                <div class="overflow-x-auto bg-white rounded-lg shadow-md border border-slate-200">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-700 uppercase tracking-wider text-xs">
+                            <tr>
+                                <th class="p-3">Paper</th>
+                                <th class="p-3">Contribution</th>
+                                <th class="p-3">Gaps Identified</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-slate-700">
+                             <tr class="border-b border-slate-200">
+                                <td class="p-3 font-semibold text-slate-900">Pinto et al. (2023)</td>
+                                <td class="p-3">Systematic review (2018-2022) of 98 papers on ML/AI IDS for ICS/SCADA and IIoT. Confirmed trade-off between missing new attacks (signature) and high false positives (anomaly).</td>
+                                <td class="p-3">Survey only; does not experimentally compare algorithms; fails to resolve accuracy vs. false-alarm dilemma.</td>
+                            </tr>
+                            <tr class="border-b border-slate-200">
+                                <td class="p-3 font-semibold text-slate-900">Sezgin & Boyacı (2023)</td>
+                                <td class="p-3">Developed AID4I Automl Framework viability on IIoT. Proved automation improves accuracy by up to 14.39% and reduces training time.</td>
+                                <td class="p-3">Relied on a single AutoML pipeline; did not benchmark across platforms.</td>
+                            </tr>
+                            <tr class="border-b border-slate-200">
+                                <td class="p-3 font-semibold text-slate-900">Liu et al. (2022)</td>
+                                <td class="p-3">Audited CSE-CIC-IDS2018 dataset by reverse-engineering the closed-source labelling logic, reconstructing clean versions, and measuring corruption levels, finding a <span class="font-bold">7.53% label error rate</span>. Provided a corrected dataset.</td>
+                                <td class="p-3">Nuances in Attempted and Infiltration attack types. Justifies my use of an "improved" dataset, ensuring validity.</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-semibold text-slate-900">Darko (2023)</td>
+                                <td class="p-3"> Proposes a BERT-style Transformer that learns directly from raw flows; fine-tuned on 6400 labelled CIC-IDS-2018 records, achieving 99.82% accuracy with auto feature selection.</td>
+                                <td class="p-3">Reviewed a single architecture approach and requires manual fine tuning. Strong benchmark, but FPR of <span class="font-bold">0.1%</span> can still be too high for practical operations.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-6">
+                    <h4 class="font-semibold text-slate-800">References</h4>
+                    <ul class="text-xs text-slate-500 space-y-1 mt-2">
+                        <li>Darko, M. A. (2023). *Multi-class anomaly-based intrusion detection system using transformers* (Doctoral dissertation, George Washington University). https://scholarspace.library.gwu.edu/concern/gw_etds/9306t009z</li>
+                        <li>Liu, L., Engelen, G., Lynar, T. M., Essam, D. L., & Joosen, W. (2022). Error Prevalence in NIDS datasets: A Case Study on CIC-IDS-2017 and CSE-CIC-IDS-2018. In *2022 IEEE Conference on Communications and Network Security (CNS)* (pp. 254-262). https://ieeexplore.ieee.org/document/9947235</li>
+                        <li>Pinto, A., Herrera, L.-C., Donoso, Y., & Gutierrez, J. A. (2023). Survey on Intrusion Detection Systems Based on Machine Learning Techniques for the Protection of Critical Infrastructure. *Sensors, 23*(5), 2415. https://doi.org/10.3390/s23052415</li>
+                        <li>Sezgin, A., & Boyacı, A. (2023). AID4I: An Intrusion Detection Framework for Industrial Internet of Things Using Automated Machine Learning. *Computers, Materials & Continua, 76*, 2121-2143. https://doi.org/10.32604/cmc.2023.040287</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 6: Dataset Dilemma -->
+        <section id="dataset-dilemma" class="slide section-light" data-title="Dataset Dilemma">
+            <div class="slide-content container mx-auto px-6">
+                <div class="text-center mb-10">
+                    <h3 class="text-4xl md:text-5xl font-extrabold">A Foundation of Truth: The Dataset Dilemma</h3>
+                    <p class="text-lg text-slate-600 mt-2 max-w-3xl mx-auto">This research addresses a critical flaw in many benchmark studies by building its models on a foundation of verified, high-integrity data.</p>
+                </div>
+                <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                    <!-- The Problem -->
+                    <div class="bg-white p-8 rounded-xl border-l-4 border-red-500 shadow-lg">
+                        <h4 class="text-2xl font-bold flex items-center mb-4"><svg class="w-7 h-7 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>The Problem: Corrupted Benchmarks</h4>
+                        <p class="text-slate-600 mb-4">The original CSE-CIC-IDS2018 dataset, used in many studies, has been found to have significant flaws:</p>
+                        <ul class="list-disc list-inside space-y-2 text-slate-700">
+                            <li><span class="font-semibold text-red-600">7.53%</span> of the entire dataset is mislabeled.</li>
+                            <li>Some attack classes have significant label corruption.</li>
+                        </ul>
+                    </div>
+                    <!-- The Solution -->
+                    <div class="bg-white p-8 rounded-xl border-l-4 border-green-500 shadow-lg">
+                        <h4 class="text-2xl font-bold flex items-center mb-4"><svg class="w-7 h-7 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Our Solution: Verified Data</h4>
+                        <p class="text-slate-600 mb-4">This praxis exclusively uses the <span class="font-bold">corrected and validated version</span> of the dataset provided by Liu et al. (2022).</p>
+                        <p class="text-slate-600">This ensures our models learn from <span class="font-semibold">real attack patterns</span>, not data artifacts, making the results more robust and reliable.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 7: Methodology Section (Infographic) -->
+        <section id="methodology" class="slide section-dark" data-title="Methodology">
+            <div class="slide-content container mx-auto px-6 text-center">
+                <h3 class="text-4xl md:text-5xl font-extrabold text-white mb-2">Methodology</h3>
+                <p class="text-lg text-gray-400 mb-10">An End-to-End Automated Pipeline</p>
+
+                <div class="max-w-5xl mx-auto space-y-4">
+                    <!-- Step 1 & 2 -->
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 shadow-lg">
+                         <h4 class="text-2xl font-bold text-blue-400 mb-4">Phase 1: Data Preparation</h4>
+                        <div class="grid md:grid-cols-2 gap-6 items-center">
+                           <div class="text-left">
+                                <h5 class="font-bold text-gray-200 mb-2">1. Data Curation & Partitioning</h5>
+                                <p class="text-sm text-gray-400">Started with the corrected CSE-CIC-IDS2018 dataset, which was cleaned, deduplicated, and partitioned into training (80%), validation (8%), and test (12%) sets.</p>
+                            </div>
+                           <div class="text-left">
+                                <h5 class="font-bold text-gray-200 mb-2">2. Hybrid Resampling & Subsetting</h5>
+                                <p class="text-sm text-gray-400">Applied a hybrid resampling strategy (SMOTE, SMOTE-ENN, Undersampling) to the training data to reduce class imbalance from ~370k:1 to ~72:1, then split it into two training subsets.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-center"><svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg></div>
+                    <!-- Step 3 -->
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 shadow-lg">
+                        <h4 class="text-2xl font-bold text-purple-400 mb-4">Phase 2: AutoML Execution & Validation</h4>
+                        <div class="grid md:grid-cols-3 gap-6 items-start">
+                             <div class="text-center">
+                                <svg class="w-12 h-12 mx-auto text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7V4h16v3"/><path d="M5 20h14"/><path d="M6 20h12v-2a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v2z"/><path d="M12 16V7"/><path d="M9 11h6"/></svg>
+                                <h5 class="font-bold text-gray-200 mt-2 mb-1">Training & Evaluation</h5>
+                                <p class="text-sm text-gray-400">Used 2 subsets to train 6 models on 3 platforms (AWS, Azure, AutoGluon), evaluated on unseen test data.</p>
+                            </div>
+                             <div class="text-center">
+                                 <svg class="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                <h5 class="font-bold text-gray-200 mt-2 mb-1">AutoML Pipeline</h5>
+                                <p class="text-sm text-gray-400">Automated Preprocessing, Feature Engineering, Model Selection, and Hyperparameter Tuning.</p>
+                             </div>
+                             <div class="text-center">
+                                 <svg class="w-12 h-12 mx-auto text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20V16"/></svg>
+                                <h5 class="font-bold text-gray-200 mt-2 mb-1">Statistical Validation</h5>
+                                <p class="text-sm text-gray-400">Used 2-Sample t-Tests to statistically compare proposed models against benchmarks.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 8: Experiment Architecture -->
+        <section id="architecture" class="slide section-dark" data-title="Architecture">
+            <div class="slide-content container mx-auto px-6 text-center">
+                 <h3 class="text-4xl md:text-5xl font-extrabold text-white mb-10">Experiment Architecture</h3>
+                 <div class="bg-gray-800/50 p-6 rounded-xl border border-gray-700 shadow-lg max-h-[70vh] flex justify-center items-center">
+                    <img src="https://storage.googleapis.com/gemini-prod/images/image_6bb085.png" alt="Experiment Architecture Diagram" class="max-w-full max-h-full object-contain rounded-md">
+                </div>
+            </div>
+        </section>
+        
+        <!-- Slide 9: Results - Model Performance -->
+        <section id="results-perf" class="slide section-dark" data-title="Results: Performance">
+             <div class="slide-content container mx-auto px-6">
+                <div class="text-center mb-8">
+                    <h3 class="text-4xl md:text-5xl font-extrabold text-white">Results: Model Performance</h3>
+                    <p class="mt-2 text-lg text-gray-400">Evaluating final models on the unseen test set.</p>
+                </div>
+                 <div class="grid md:grid-cols-2 gap-8">
+                      <div>
+                        <h4 class="text-2xl font-bold mb-4 text-center text-white">Final Model Evaluation</h4>
+                        <div class="flex justify-center flex-wrap gap-2 mb-4">
+                            <button class="metric-btn eval-btn px-3 py-1 rounded-md text-sm font-medium active" data-metric="accuracy">Accuracy</button>
+                             <button class="metric-btn eval-btn px-3 py-1 rounded-md text-sm font-medium" data-metric="balanced_accuracy">Balanced Acc</button>
+                            <button class="metric-btn eval-btn px-3 py-1 rounded-md text-sm font-medium" data-metric="f1_weighted">F1 (W)</button>
+                            <button class="metric-btn eval-btn px-3 py-1 rounded-md text-sm font-medium" data-metric="precision_weighted">Precision (W)</button>
+                            <button class="metric-btn eval-btn px-3 py-1 rounded-md text-sm font-medium" data-metric="recall_weighted">Recall (W)</button>
+                            <button class="metric-btn eval-btn px-3 py-1 rounded-md text-sm font-medium" data-metric="mcc">MCC</button>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                    </div>
+                      <div>
+                        <h4 class="text-2xl font-bold mb-4 text-center text-white">Validation Performance</h4>
+                        <div class="flex justify-center flex-wrap gap-2 mb-4">
+                            <button class="metric-btn val-btn px-3 py-1 rounded-md text-sm font-medium active" data-metric="accuracy">Accuracy</button>
+                            <button class="metric-btn val-btn px-3 py-1 rounded-md text-sm font-medium" data-metric="balanced_accuracy">Balanced Acc</button>
+                            <button class="metric-btn val-btn px-3 py-1 rounded-md text-sm font-medium" data-metric="f1_score_macro">F1 (Macro)</button>
+                            <button class="metric-btn val-btn px-3 py-1 rounded-md text-sm font-medium" data-metric="precision_macro">Precision (M)</button>
+                            <button class="metric-btn val-btn px-3 py-1 rounded-md text-sm font-medium" data-metric="recall_macro">Recall (M)</button>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="validationChart"></canvas>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+        </section>
+        
+        <!-- Slide 10: Full Benchmark Comparison Table -->
+        <section id="benchmark-table" class="slide section-dark" data-title="Results: Benchmarks">
+            <div class="slide-content container mx-auto px-6">
+                <div class="text-center mb-8">
+                    <h3 class="text-4xl md:text-5xl font-extrabold text-white">Comparison with Recent Benchmark Studies</h3>
+                </div>
+                <div class="overflow-x-auto bg-gray-800 rounded-lg shadow-lg border border-gray-700">
+                    <table id="fullBenchmarkTable" class="w-full text-left text-sm">
+                        <thead class="bg-gray-700 text-gray-300">
+                            <tr>
+                                <th class="p-3 sortable-th" data-sort="study">Study<span class="sort-arrow">▼</span></th>
+                                <th class="p-3 sortable-th" data-sort="feature_selection">Feature Selection<span class="sort-arrow">▼</span></th>
+                                <th class="p-3 sortable-th" data-sort="method">ML Method<span class="sort-arrow">▼</span></th>
+                                <th class="p-3 sortable-th" data-sort="accuracy">Accuracy<span class="sort-arrow">▼</span></th>
+                                <th class="p-3 sortable-th" data-sort="precision">Precision<span class="sort-arrow">▼</span></th>
+                                <th class="p-3 sortable-th" data-sort="recall">Recall<span class="sort-arrow">▼</span></th>
+                                <th class="p-3 sortable-th" data-sort="f1">F1-Score<span class="sort-arrow">▼</span></th>
+                                <th class="p-3 sortable-th" data-sort="fpr">FPR<span class="sort-arrow">▼</span></th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-400"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- NEW SLIDE: Statistical Validation -->
+        <section id="statistical-validation" class="slide section-light" data-title="Statistical Validation">
+            <div class="slide-content container mx-auto px-6 text-center">
+                <h3 class="text-3xl md:text-4xl font-bold mb-2">Statistical Validation of Hypotheses</h3>
+                <p class="text-slate-600 mb-10">Using 2-Sample T-Tests to confirm the significance of our findings (α = 0.05).</p>
+                <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                    <!-- H1 Validation -->
+                    <div class="info-card p-8 rounded-xl text-center">
+                        <h4 class="text-2xl font-bold flex items-center justify-center mb-3"><svg class="w-7 h-7 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>Hypothesis 1: Higher Accuracy</h4>
+                        <p class="text-slate-600 mb-4">Proposed models have significantly higher accuracy than benchmarks.</p>
+                        <div class="bg-green-100 border-l-4 border-green-500 text-green-800 p-4 rounded-md">
+                            <p class="font-bold text-lg">Statistically Significant</p>
+                            <p class="font-mono text-xl">p = 0.029</p>
+                        </div>
+                    </div>
+                    <!-- H2 Validation -->
+                    <div class="info-card p-8 rounded-xl text-center">
+                        <h4 class="text-2xl font-bold flex items-center justify-center mb-3"><svg class="w-7 h-7 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>Hypothesis 2: Lower FPR</h4>
+                        <p class="text-slate-600 mb-4">Proposed models have a significantly lower False Positive Rate.</p>
+                        <div class="bg-green-100 border-l-4 border-green-500 text-green-800 p-4 rounded-md">
+                            <p class="font-bold text-lg">Statistically Significant</p>
+                            <p class="font-mono text-xl">p = 0.035</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 12: Results - FPR Breakthrough -->
+        <section id="results-fpr" class="slide section-dark" data-title="Results: FPR Breakthrough">
+             <div class="slide-content container mx-auto px-6">
+                 <div class="text-center mb-6">
+                    <h3 class="text-4xl md:text-5xl font-extrabold text-white">Results: The FPR Breakthrough</h3>
+                    <p class="mt-2 text-lg text-gray-400">A >99.9% improvement in operational viability, validated as statistically significant.</p>
+                </div>
+
+                 <div class="text-center mb-8">
+                    <p class="text-lg text-gray-300">Our best model achieved a False Positive Rate of:</p>
+                    <p class="text-7xl lg:text-8xl font-bold text-cyan-400 my-2">2 &times; 10<sup>-8</sup></p>
+                    <div class="inline-block bg-blue-500/20 text-blue-200 px-4 py-2 rounded-lg">
+                        Equivalent to only <strong>one false alarm per 50 million</strong> benign events.
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <h4 class="text-xl font-bold mb-4 text-white">FPR vs. Benchmarks (Log Scale)</h4>
+                    <div class="chart-container h-[35vh]">
+                        <canvas id="fprChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 13: Discussion Section -->
+        <section id="discussion" class="slide section-dark" data-title="Discussion">
+            <div class="slide-content container mx-auto px-6">
+                <div class="text-center mb-10">
+                    <h3 class="text-4xl md:text-5xl font-extrabold text-white">Discussion of Key Findings</h3>
+                </div>
+                <div class="space-y-8">
+                    <div>
+                        <h4 class="text-2xl font-bold text-center mb-4 text-blue-300">Answering the Research Questions</h4>
+                        <div class="space-y-4 max-w-4xl mx-auto">
+                            <div class="bg-gray-800/60 p-4 rounded-lg border border-gray-700"><p class="font-semibold text-lg flex items-center"><span class="text-green-400 mr-2">✔</span> RQ1: Improve Performance? <span class="text-green-400 ml-2 font-bold">YES (Statistically Significant)</span></p><p class="text-gray-400 ml-6 text-sm">AutoML delivered >99.99% accuracy while achieving a near-zero False Positive Rate, overcoming the traditional performance trade-off.</p></div>
+                            <div class="bg-gray-800/60 p-4 rounded-lg border border-gray-700"><p class="font-semibold text-lg flex items-center"><span class="text-green-400 mr-2">✔</span> RQ2: Reduce False Alarms? <span class="text-green-400 ml-2 font-bold">YES (Statistically Significant)</span></p><p class="text-gray-400 ml-6 text-sm">The FPR was reduced by >99.8% compared to the average of recent benchmarks, effectively eliminating alert fatigue.</p></div>
+                            <div class="bg-gray-800/60 p-4 rounded-lg border border-gray-700"><p class="font-semibold text-lg flex items-center"><span class="text-green-400 mr-2">✔</span> RQ3: Streamline Development? <span class="text-green-400 ml-2 font-bold">YES.</span></p><p class="text-gray-400 ml-6 text-sm">Superior models were produced in under 5 hours, proving AutoML is far more efficient than manual processes.</p></div>
+                        </div>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-8 pt-6">
+                        <div class="bg-gray-800/60 p-6 rounded-lg border border-gray-700">
+                             <h4 class="text-2xl font-bold text-center mb-4 text-purple-300">A New Performance Benchmark</h4>
+                             <p class="text-center text-sm text-gray-400 mb-6">The best model established a new state-of-the-art for IDS on this dataset.</p>
+                             <div class="grid grid-cols-2 gap-4 text-center">
+                                <div class="bg-gray-900 p-4 rounded-lg"><p class="text-3xl font-extrabold text-cyan-400">>99.99%</p><p class="text-sm font-semibold text-gray-300">Accuracy</p></div>
+                                <div class="bg-gray-900 p-4 rounded-lg"><p class="text-3xl font-extrabold text-cyan-400">>99.99%</p><p class="text-sm font-semibold text-gray-300">Precision</p></div>
+                                <div class="bg-gray-900 p-4 rounded-lg"><p class="text-3xl font-extrabold text-cyan-400">>99.99%</p><p class="text-sm font-semibold text-gray-300">Recall</p></div>
+                                <div class="bg-gray-900 p-4 rounded-lg"><p class="text-3xl font-extrabold text-cyan-400">>99.99%</p><p class="text-sm font-semibold text-gray-300">F1 Score</p></div>
+                                <div class="bg-gray-900 p-4 rounded-lg"><p class="text-3xl font-extrabold text-cyan-400">>99.98%</p><p class="text-sm font-semibold text-gray-300">Balanced Acc.</p></div>
+                                <div class="bg-gray-900 p-4 rounded-lg"><p class="text-3xl font-extrabold text-cyan-400">>0.9999</p><p class="text-sm font-semibold text-gray-300">MCC Score</p></div>
+                             </div>
+                        </div>
+                        <div class="space-y-8">
+                             <div class="bg-gray-800/60 p-6 rounded-lg border border-gray-700">
+                                <h4 class="text-2xl font-bold text-center mb-4 text-amber-300">Eliminating Alert Fatigue</h4>
+                                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-center">
+                                    <div class="bg-red-900/40 p-3 rounded"><p class="font-bold text-xl text-red-300">1.19%</p><p class="text-xs text-gray-400">Avg. Benchmark FPR</p></div>
+                                    <div class="bg-yellow-900/40 p-3 rounded"><p class="font-bold text-xl text-yellow-300">0.1%</p><p class="text-xs text-gray-400">SOTA (Darko)</p></div>
+                                    <div class="bg-green-900/40 p-3 rounded"><p class="font-bold text-xl text-green-300">~0%</p><p class="text-xs text-gray-400">This Praxis</p></div>
+                                    <div class="bg-blue-900/40 p-3 rounded"><p class="font-bold text-xl text-blue-300">2 per 100M</p><p class="text-xs text-gray-400">In Practice</p></div>
+                                </div>
+                                <p class="text-center text-green-400 font-semibold mt-4">>99.8% Reduction in False Positives</p>
+                            </div>
+                            <div class="bg-gray-800/60 p-4 rounded-lg border border-gray-700">
+                                <h4 class="text-xl font-bold text-center mb-3 text-teal-300">Surpassing SOTA Models</h4>
+                                <table class="w-full text-sm text-center"><thead class="text-gray-400"><tr><th>Metric</th><th>Darko (2023)</th><th>Karatas (2020)</th><th class="text-teal-300">This Praxis</th></tr></thead>
+                                    <tbody class="text-gray-200">
+                                        <tr class="border-t border-gray-700"><td class="py-1 font-semibold">Accuracy</td><td>99.82%</td><td>99.69%</td><td class="font-bold text-teal-300">>99.99%</td></tr>
+                                        <tr class="border-t border-gray-700"><td class="py-1 font-semibold">Precision</td><td>98.63%</td><td>99.70%</td><td class="font-bold text-teal-300">>99.99%</td></tr>
+                                        <tr class="border-t border-gray-700"><td class="py-1 font-semibold">Recall</td><td>99.83%</td><td>99.70%</td><td class="font-bold text-teal-300">>99.99%</td></tr>
+                                        <tr class="border-t border-gray-700"><td class="py-1 font-semibold">F1-Score</td><td>99.22%</td><td>99.70%</td><td class="font-bold text-teal-300">>99.99%</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 14: Final Conclusion -->
+        <section id="final-conclusion" class="slide section-dark" data-title="Conclusion">
+            <div class="slide-content container mx-auto px-6 text-center">
+                 <div class="text-center mb-10">
+                    <h3 class="text-4xl md:text-5xl font-extrabold text-white">Conclusion</h3>
+                    <p class="text-lg text-gray-400 mt-2">A Paradigm Shift in Intrusion Detection</p>
+                </div>
+                <div class="max-w-5xl mx-auto grid md:grid-cols-3 gap-8">
+                    <div class="bg-gray-800/50 p-6 rounded-xl border border-gray-700 shadow-lg text-center">
+                        <div class="mx-auto bg-purple-500/20 w-16 h-16 rounded-full flex items-center justify-center mb-4"><svg class="w-8 h-8 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
+                        <h4 class="text-xl font-bold text-purple-300">Unprecedented Performance</h4>
+                        <p class="text-gray-400 mt-2">This work establishes a new, statistically validated state-of-the-art, with >99.99% accuracy.</p>
+                    </div>
+                     <div class="bg-gray-800/50 p-6 rounded-xl border border-gray-700 shadow-lg text-center">
+                        <div class="mx-auto bg-green-500/20 w-16 h-16 rounded-full flex items-center justify-center mb-4"><svg class="w-8 h-8 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                        <h4 class="text-xl font-bold text-green-300">Operational Viability</h4>
+                        <p class="text-gray-400 mt-2">By statistically proving a >99.8% reduction in FPR, AutoML solves the critical problem of alert fatigue.</p>
+                    </div>
+                     <div class="bg-gray-800/50 p-6 rounded-xl border border-gray-700 shadow-lg text-center">
+                        <div class="mx-auto bg-blue-500/20 w-16 h-16 rounded-full flex items-center justify-center mb-4"><svg class="w-8 h-8 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+                        <h4 class="text-xl font-bold text-blue-300">Accelerated & Accessible</h4>
+                        <p class="text-gray-400 mt-2">Developing elite IDS models in under 5 hours democratizes advanced cybersecurity, making it faster and more accessible.</p>
+                    </div>
+                </div>
+                <div class="mt-12"><p class="text-xl italic text-gray-300">AutoML is not just an improvement—it is a transformative approach that redefines what is possible for automated, intelligent, and resilient network defense.</p></div>
+            </div>
+        </section>
+
+        <!-- Slide 15: Contributions & Future Work Section -->
+        <section id="contributions" class="slide section-light" data-title="Contributions & Future Work">
+            <div class="slide-content container mx-auto px-6">
+                 <div class="grid md:grid-cols-2 gap-12">
+                      <div class="text-center">
+                        <h3 class="text-3xl md:text-4xl font-extrabold mb-8">Contributions to Body of Knowledge</h3>
+                        <div class="space-y-6">
+                            <div class="info-card p-6 rounded-xl flex items-start space-x-4"><div class="bg-yellow-100 p-3 rounded-full"><svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2h8a2 2 0 002-2v-1a2 2 0 012-2h1.945M7.881 4.042A7.962 7.962 0 0112 2c1.933 0 3.716.63 5.119 1.688M12 5v9m-3 0h6"></path></svg></div><div class="text-left"><h4 class="font-bold text-xl">New State-of-the-Art</h4><p class="text-slate-600">Established a new, statistically validated performance benchmark for IDS, surpassing all reviewed literature.</p></div></div>
+                            <div class="info-card p-6 rounded-xl flex items-start space-x-4"><div class="bg-red-100 p-3 rounded-full"><svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg></div><div class="text-left"><h4 class="font-bold text-xl">Solved Alert Fatigue</h4><p class="text-slate-600">Proved AutoML can solve a critical operational challenge by delivering a statistically significant reduction in the False Positive Rate.</p></div></div>
+                            <div class="info-card p-6 rounded-xl flex items-start space-x-4"><div class="bg-cyan-100 p-3 rounded-full"><svg class="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l-4 4-4-4M6 16l-4-4 4-4"></path></svg></div><div class="text-left"><h4 class="font-bold text-xl">Reproducible Research</h4><p class="text-slate-600">Provided open access to all code, notebooks, and experimental artifacts on GitHub to ensure transparency and enable future work.</p></div></div>
+                        </div>
+                      </div>
+                      <div class="text-center">
+                        <h3 class="text-3xl md:text-4xl font-extrabold mb-8">Future Research Directions</h3>
+                        <div class="space-y-6">
+                            <div class="info-card p-6 rounded-xl flex items-start space-x-4"><div class="bg-green-100 p-3 rounded-full"><svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div><div class="text-left"><h4 class="font-bold text-xl">Real-Time Validation</h4><p class="text-slate-600">Deploy models to analyze live network traffic to assess latency and performance under dynamic conditions.</p></div></div>
+                            <div class="info-card p-6 rounded-xl flex items-start space-x-4"><div class="bg-purple-100 p-3 rounded-full"><svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9V3m0 18a9 9 0 00-9-9m9 9h-6m-6 0H3m6 0V3m0 18A9 9 0 003 12m6 6V3"></path></svg></div><div class="text-left"><h4 class="font-bold text-xl">Cross-Dataset Generalization</h4><p class="text-slate-600">Evaluate model robustness on other challenging datasets like UNSW-NB15 to test for broader applicability.</p></div></div>
+                            <div class="info-card p-6 rounded-xl flex items-start space-x-4"><div class="bg-indigo-100 p-3 rounded-full"><svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg></div><div class="text-left"><h4 class="font-bold text-xl">Standardize Reporting</h4><p class="text-slate-600">Advocate for standardized evaluation protocols (including FPR) across IDS research to improve comparability.</p></div></div>
+                        </div>
+                      </div>
+                 </div>
+            </div>
+        </section>
+
+        <!-- Slide 16: Thank You & Questions -->
+        <section id="thank-you" class="slide section-dark" data-title="Thank You">
+            <div class="slide-content container mx-auto px-6 text-center">
+                 <div class="max-w-4xl mx-auto">
+                    <svg class="w-24 h-24 mx-auto text-blue-400 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <h3 class="text-5xl md:text-7xl font-extrabold text-white">Thank You</h3>
+                    <p class="text-2xl md:text-3xl text-gray-300 mt-4">Questions?</p>
+                    <div class="mt-12 border-t border-gray-700 pt-8 flex justify-center items-center space-x-8 text-lg">
+                        <div>
+                             <p class="font-bold text-white">Chibuike S. Abana</p>
+                             <p class="text-gray-400">Praxis Defense</p>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Navigation Controls -->
+    <div class="navigation">
+        <button id="prev-btn" class="nav-btn">Previous</button>
+        <div class="flex items-center space-x-4">
+            <div id="slide-info"></div>
+            <button id="menu-btn" class="nav-btn">Menu</button>
+        </div>
+        <button id="next-btn" class="nav-btn">Next</button>
+    </div>
+
+    <!-- Slide Menu -->
+    <div id="slide-menu">
+        <ul id="menu-links"></ul>
+    </div>
+
+
+    <script>
+        // --- DATA (UPDATED with full benchmark info & per-class FPR) ---
+        const evaluationData = { labels: ['Subset 1', 'Subset 2'], autogluon: { accuracy: [0.9999930, 0.9999966], f1_weighted: [0.9999928, 0.9999967], precision_weighted: [0.9999929, 0.9999967], recall_weighted: [0.9999928, 0.9999967], mcc: [0.9999502, 0.9999770], balanced_accuracy: [0.9998200, 0.9999996] }, aws_autopilot: { accuracy: [0.9999998, 0.9999954], f1_weighted: [0.9999998, 0.9999957], precision_weighted: [0.9999998, 0.9999963], recall_weighted: [0.9999998, 0.9999954], mcc: [0.9999987, 0.9999681], balanced_accuracy: [0.9999108, 0.9999103] }, azure_automl: { accuracy: [0.9999980, 0.9999970], f1_weighted: [0.9999980, 0.9999970], precision_weighted: [0.9999980, 0.9999970], recall_weighted: [0.9999980, 0.9999970], mcc: [0.9999860, 0.9999796], balanced_accuracy: [0.9998056, 0.9997321] } };
+        const validationData = { labels: ['Subset 1', 'Subset 2'], autogluon: { accuracy: [0.9999910, 0.9999970], balanced_accuracy: [0.9999990, 1.0], f1_score_macro: [0.9790860, 0.9991790], precision_macro: [0.9652490, 0.9983680], recall_macro: [0.9999990, 0.9999997] }, aws_autopilot: { accuracy: [1.0, 0.9999890], balanced_accuracy: [1.0, 1.0], f1_score_macro: [1.0, 0.9784000], precision_macro: [1.0, 0.9647000], recall_macro: [1.0, 1.0] }, azure_automl: { accuracy: [0.9999986, 0.9999986], balanced_accuracy: [0.9998502, 0.9998660], f1_score_macro: [0.9997002, 0.9996824], precision_macro: [0.9995515, 0.9994999], recall_macro: [0.9998502, 0.9998660] } };
+        const fullBenchmarkData = [
+            { study: 'Proposed (AWS S1)', feature_selection: 'Automatic', method: 'AutoML', accuracy: 0.9999998, precision: 0.9999998, recall: 0.9999998, f1: 0.9999998, fpr: 0.00000046 },
+            { study: 'Proposed (Azure S1)', feature_selection: 'Automatic', method: 'AutoML', accuracy: 0.9999980, precision: 0.9999980, recall: 0.9999980, f1: 0.9999980, fpr: 0.00000028 },
+            { study: 'Proposed (Azure S2)', feature_selection: 'Automatic', method: 'AutoML', accuracy: 0.9999970, precision: 0.9999970, recall: 0.9999970, f1: 0.9999970, fpr: 0.00000028 },
+            { study: 'Proposed (AutoGluon S2)', feature_selection: 'Automatic', method: 'AutoML', accuracy: 0.9999966, precision: 0.9999967, recall: 0.9999967, f1: 0.9999967, fpr: 0.00000002 },
+            { study: 'Proposed (AWS S2)', feature_selection: 'Automatic', method: 'AutoML', accuracy: 0.9999954, precision: 0.9999963, recall: 0.9999954, f1: 0.9999957, fpr: 0.00000018 },
+            { study: 'Proposed (AutoGluon S1)', feature_selection: 'Automatic', method: 'AutoML', accuracy: 0.9999930, precision: 0.9999929, recall: 0.9999928, f1: 0.9999928, fpr: 0.00000033 },
+            { study: 'Kim et al. (2020)', feature_selection: 'Manual', method: 'CNN', accuracy: 0.9999, precision: 0.8180, recall: 0.8230, f1: null, fpr: null },
+            { study: 'Darko (2023)', feature_selection: 'Automatic', method: 'BERT', accuracy: 0.9982, precision: 0.9863, recall: 0.9983, f1: 0.9922, fpr: 0.0010 },
+            { study: 'Karatas et al. (2020)', feature_selection: 'Manual', method: 'AdaBoost', accuracy: 0.9969, precision: 0.9970, recall: 0.9970, f1: 0.9970, fpr: null },
+            { study: 'Catillo et al. (2020)', feature_selection: 'Manual', method: 'Deep Autoencoder', accuracy: 0.9920, precision: 0.9500, recall: 0.9890, f1: null, fpr: 0.0050 },
+            { study: 'Saeful Fitni & Ramli (2020)', feature_selection: 'Manual', method: 'Ensemble (Voting)', accuracy: 0.9880, precision: 0.9880, recall: 0.9710, f1: 0.9790, fpr: 0.0259627 },
+            { study: 'Zhao et al. (2020)', feature_selection: 'Automatic', method: 'Deep Autoencoder', accuracy: 0.9790, precision: 0.9800, recall: 0.9800, f1: 0.9800, fpr: 0.0210 },
+            { study: 'Peng et al. (2019)', feature_selection: 'Manual', method: 'LSTM & Attention', accuracy: 0.9620, precision: 0.9600, recall: 0.9600, f1: 0.9300, fpr: 0.00670 }
+        ];
+        const fprByClassData = {
+            labels: ['Benign', 'Botnet', 'DDoS-HOIC', 'DDoS-HTTP', 'DDoS-UDP', 'DoS-GE', 'DoS-Hulk', 'DoS-SL', 'SSH-BF', 'Web-BF', 'Web-XSS'],
+            'AutoGluon S1':    [0.00000033, 0.0000000039, 0.0, 0.0000000002, 0.0, 0.00000203, 0.00000038, 0.0, 0.0, 0.0, 0.00000037],
+            'AutoGluon S2':    [0.0, 0.0000000002, 0.0, 0.0, 0.0000000002, 0.00000222, 0.00000058, 0.0, 0.0, 0.0, 0.00000018],
+            'AWS S1': [0.0000005, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            'AWS S2': [0.0000002, 0.0, 0.0, 0.0, 0.0, 0.0000011, 0.0, 0.0000004, 0.0000006, 0.0000020, 0.0000004],
+            'Azure S1':   [0.0000003, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0000012, 0.0, 0.0, 0.0, 0.0],
+            'Azure S2':   [0.0000003, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0000015, 0.0, 0.0000004, 0.0, 0.0]
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- SLIDE NAVIGATION ---
+            const slides = document.querySelectorAll('.slide');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const slideInfo = document.getElementById('slide-info');
+            const menuBtn = document.getElementById('menu-btn');
+            const slideMenu = document.getElementById('slide-menu');
+            const menuLinksContainer = document.getElementById('menu-links');
+            let currentSlide = 0;
+            const chartInstances = {};
+            
+            // Populate menu
+            slides.forEach((slide, index) => {
+                const title = slide.dataset.title || `Slide ${index + 1}`;
+                const li = document.createElement('li');
+                li.innerHTML = `<a class="menu-link" data-slide-index="${index}">${title}</a>`;
+                menuLinksContainer.appendChild(li);
+            });
+            const menuLinks = document.querySelectorAll('.menu-link');
+
+            function showSlide(index) {
+                if (slides[currentSlide]) {
+                    slides[currentSlide].classList.remove('active');
+                }
+                currentSlide = index;
+                slides[currentSlide].classList.add('active');
+                
+                // Update navigation
+                prevBtn.disabled = currentSlide === 0;
+                nextBtn.disabled = currentSlide === slides.length - 1;
+                const title = slides[currentSlide].dataset.title || '';
+                slideInfo.innerHTML = `<span>${currentSlide + 1} / ${slides.length}</span><span class="mx-2 text-gray-600">|</span><span>${title}</span>`;
+                
+                // Update active link in menu
+                menuLinks.forEach(link => link.classList.remove('active'));
+                const activeLink = document.querySelector(`.menu-link[data-slide-index="${currentSlide}"]`);
+                if(activeLink) activeLink.classList.add('active');
+
+                slideMenu.style.display = 'none';
+                
+                const canvases = slides[currentSlide].querySelectorAll('canvas');
+                canvases.forEach(canvas => {
+                    if (canvas && !chartInstances[canvas.id]) {
+                        setTimeout(() => initChartOnSlide(canvas.id), 50); 
+                    }
+                });
+            }
+
+            prevBtn.addEventListener('click', () => { if (currentSlide > 0) showSlide(currentSlide - 1); });
+            nextBtn.addEventListener('click', () => { if (currentSlide < slides.length - 1) showSlide(currentSlide + 1); });
+            
+            menuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                slideMenu.style.display = slideMenu.style.display === 'block' ? 'none' : 'block';
+            });
+            
+            menuLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    const index = parseInt(link.dataset.slideIndex);
+                    showSlide(index);
+                });
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!slideMenu.contains(e.target) && e.target !== menuBtn) {
+                    slideMenu.style.display = 'none';
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight') nextBtn.click();
+                else if (e.key === 'ArrowLeft') prevBtn.click();
+                else if (e.key === 'm' || e.key === 'M') menuBtn.click();
+                else if (e.key === 'Escape' && slideMenu.style.display === 'block') slideMenu.style.display = 'none';
+            });
+
+            // --- CHARTING & INTERACTIVITY ---
+            const frameworkColors = { 
+                'AutoGluon S1': { bg: 'rgba(59, 130, 246, 0.7)', border: '#2563eb' },
+                'AutoGluon S2': { bg: 'rgba(34, 197, 94, 0.7)', border: '#15803d' },
+                'AWS S1': { bg: 'rgba(249, 115, 22, 0.7)', border: '#ea580c' },
+                'AWS S2': { bg: 'rgba(217, 70, 239, 0.7)', border: '#a21caf' },
+                'Azure S1': { bg: 'rgba(14, 165, 233, 0.7)', border: '#0891b2' },
+                'Azure S2': { bg: 'rgba(239, 68, 68, 0.7)', border: '#b91c1c' },
+            };
+            const chartTextColor = '#d1d5db';
+            const chartGridColor = '#4b5563';
+
+            function createChart(canvasId, sourceData, metric, yMin = 0.99, yMax = 1.000001) {
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                if (chartInstances[canvasId]) {
+                    chartInstances[canvasId].destroy();
+                }
+
+                const chartDataLabels = ['Subset 1', 'Subset 2'];
+                const datasets = [
+                    { label: 'AutoGluon', data: [sourceData.autogluon[metric][0], sourceData.autogluon[metric][1]], backgroundColor: 'rgba(59, 130, 246, 0.7)', borderColor: '#2563eb', borderWidth: 2 },
+                    { label: 'AWS Autopilot', data: [sourceData.aws_autopilot[metric][0], sourceData.aws_autopilot[metric][1]], backgroundColor: 'rgba(249, 115, 22, 0.7)', borderColor: '#ea580c', borderWidth: 2 },
+                    { label: 'Azure AutoML', data: [sourceData.azure_automl[metric][0], sourceData.azure_automl[metric][1]], backgroundColor: 'rgba(14, 165, 233, 0.7)', borderColor: '#0891b2', borderWidth: 2 }
+                ];
+                
+                chartInstances[canvasId] = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: chartDataLabels, datasets: datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { grid: { color: chartGridColor }, beginAtZero: false, min: yMin, max: yMax, ticks: { color: chartTextColor, font: { size: 12 }, callback: (v) => `${(v * 100).toFixed(4)}%` } },
+                            x: { grid: { color: chartGridColor }, ticks: { color: chartTextColor } }
+                        },
+                        plugins: {
+                            legend: { position: 'top', labels: { color: chartTextColor } },
+                            tooltip: { callbacks: { label: (c) => `${c.dataset.label || ''}: ${(c.parsed.y * 100).toFixed(5)}%` } }
+                        }
+                    }
+                });
+            }
+            
+            function createFPRChart() {
+                const canvasId = 'fprChart';
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+                const fprData = fullBenchmarkData.filter(d => d.fpr !== null && (d.study.includes('Proposed') || ['Darko (2023)', 'Saeful Fitni & Ramli (2020)', 'Peng et al. (2019)', 'Zhao et al. (2020)', 'Catillo et al. (2020)'].includes(d.study)) );
+                const sortedFprData = fprData.sort((a,b) => a.fpr - b.fpr);
+
+                chartInstances[canvasId] = new Chart(ctx, { type: 'bar', data: {
+                        labels: sortedFprData.map(d => d.study.replace(/ et al\. \(\d{4}\)/g, '').replace('Proposed ', '').replace(/\(AutoGluon S2\)/g, '(Best)')),
+                        datasets: [{ label: 'False Positive Rate', data: sortedFprData.map(d => d.fpr),
+                            backgroundColor: (c) => {
+                                const study = c.chart.data.labels[c.dataIndex];
+                                if (study.includes('Best')) return '#10b981'; // green-500
+                                if (study.includes('S1') || study.includes('S2')) return '#60a5fa'; // blue-400
+                                return 'rgba(107, 114, 128, 0.7)';
+                            } }] },
+                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                        scales: { x: { type: 'logarithmic', title: { display: true, text: 'FPR (Log Scale)', color: chartTextColor}, grid: { color: chartGridColor}, ticks: { color: chartTextColor}}, y: { grid: { display: false }, ticks: { color: chartTextColor, font: {size: 10}} } },
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `FPR: ${c.raw.toExponential(2)}` } } }
+                    }
+                });
+            }
+
+            function createFprByClassChart() {
+                const canvasId = 'fprByClassChart';
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+
+                const datasets = Object.keys(fprByClassData).filter(key => key !== 'labels').map(key => ({
+                    label: key,
+                    data: fprByClassData[key],
+                    backgroundColor: frameworkColors[key]?.bg || 'rgba(107, 114, 128, 0.7)',
+                    borderColor: frameworkColors[key]?.border || 'rgba(107, 114, 128, 1)',
+                    borderWidth: 1,
+                }));
+                
+                chartInstances[canvasId] = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: fprByClassData.labels, datasets: datasets },
+                    options: {
+                        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                        scales: {
+                            x: { type: 'logarithmic', title: { display: true, text: 'FPR (Log Scale)', color: chartTextColor }, grid: { color: chartGridColor }, ticks: { color: chartTextColor } },
+                            y: { grid: { display: false }, ticks: { color: chartTextColor, font: { size: 10 } } }
+                        },
+                        plugins: { legend: { position: 'top', labels: { color: chartTextColor, font: {size: 10} } }, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.raw.toExponential(2)}` } } }
+                    }
+                });
+            }
+
+            function createPartitionChart() {
+                const canvasId = 'partitionChart';
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                 if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+                chartInstances[canvasId] = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: { labels: ['Training (80%)', 'Validation (8%)', 'Test (12%)'],
+                        datasets: [{ data: [80, 8, 12], backgroundColor: ['#3b82f6', '#f97316', '#16a34a'], borderColor: '#1f2937', borderWidth: 3 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
+                        plugins: { legend: { display: false }, tooltip: { enabled: true } }
+                    }
+                });
+            }
+
+            const tableBody = document.querySelector('#fullBenchmarkTable tbody');
+            let sortColumn = 'accuracy'; let sortDirection = 'desc';
+            const renderTable = (data) => {
+                tableBody.innerHTML = data.map(row => `
+                    <tr class="border-b border-gray-700 last:border-b-0 hover:bg-gray-700/50">
+                        <td class="p-3 font-semibold text-white">${row.study}</td>
+                        <td class="p-3">${row.feature_selection}</td>
+                        <td class="p-3">${row.method}</td>
+                        <td class="p-3">${row.accuracy !== null ? (row.accuracy * 100).toFixed(4) + '%' : 'N/A'}</td>
+                        <td class="p-3">${row.precision !== null ? (row.precision * 100).toFixed(4) + '%' : 'N/A'}</td>
+                        <td class="p-3">${row.recall !== null ? (row.recall * 100).toFixed(4) + '%' : 'N/A'}</td>
+                        <td class="p-3">${row.f1 !== null ? row.f1.toFixed(4) : 'N/A'}</td>
+                        <td class="p-3">${row.fpr !== null ? row.fpr.toExponential(1) : 'N/A'}</td>
+                    </tr>`).join('');
+            };
+             const sortData = (key) => {
+                const header = document.querySelector(`.sortable-th[data-sort="${key}"]`);
+                document.querySelectorAll('.sortable-th').forEach(th => th.classList.remove('sorted', 'asc', 'desc'));
+                
+                if (sortColumn === key) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                else { sortColumn = key; sortDirection = ['accuracy', 'precision', 'recall', 'f1'].includes(key) ? 'desc' : 'asc'; }
+
+                header.classList.add('sorted');
+                header.querySelector('.sort-arrow').classList.remove('asc', 'desc');
+                header.querySelector('.sort-arrow').classList.add(sortDirection);
+
+                const sortedData = [...fullBenchmarkData].sort((a, b) => {
+                    const valA = a[key]; const valB = b[key];
+                    if (valA === null) return 1; if (valB === null) return -1;
+                    if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                    if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                });
+                renderTable(sortedData);
+            };
+
+            document.querySelectorAll('.sortable-th').forEach(th => th.addEventListener('click', () => sortData(th.dataset.sort)));
+            
+            function initChartOnSlide(canvasId) {
+                switch(canvasId) {
+                    case 'performanceChart': createChart('performanceChart', evaluationData, 'accuracy', 0.9997); break;
+                    case 'validationChart': createChart('validationChart', validationData, 'accuracy', 0.96); break;
+                    case 'fprChart': createFPRChart(); break;
+                    case 'fprByClassChart': createFprByClassChart(); break;
+                    case 'partitionChart': createPartitionChart(); break;
+                }
+            }
+
+            document.querySelectorAll('.eval-btn').forEach(btn => btn.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                document.querySelector('#results-perf .eval-btn.active').classList.remove('active');
+                btn.classList.add('active'); 
+                const metric = btn.dataset.metric;
+                let yMin = 0.9999;
+                if (metric === 'balanced_accuracy') {
+                    yMin = 0.9995;
+                } else if (metric === 'mcc') {
+                    yMin = 0.9999; 
+                }
+                createChart('performanceChart', evaluationData, metric, yMin);
+            }));
+            document.querySelectorAll('.val-btn').forEach(btn => btn.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                const container = e.target.closest('.grid').querySelector('.val-btn.active');
+                if(container) container.classList.remove('active');
+                btn.classList.add('active'); 
+                const metric = btn.dataset.metric;
+                let yMin = 0.96;
+                if (metric === 'accuracy' || metric === 'recall_macro') {
+                    yMin = 0.9998;
+                } else if (metric === 'balanced_accuracy') {
+                    yMin = 0.9998;
+                }
+                createChart('validationChart', validationData, metric, yMin);
+            }));
+
+            sortData(sortColumn); 
+            showSlide(0);
+        });
+    </script>
+</body>
+</ht
